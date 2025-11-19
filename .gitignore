@@ -1,0 +1,92 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.pkl
+*.pickle
+*.tmp
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# IDE / editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache folders
+.cache/
+.cache/*
+*.cache
+pip-wheel-metadata/
+
+# --- YOLO / Ultralytics ---
+runs/
+weights/
+*.onnx
+*.engine
+
+# --- Blender / 3D assets ---
+# (Keep exported models, ignore temp/cache)
+*.blend1
+*.blend2
+*.blend@
+*.blend?
+__blender_backup__/
+*.blend.meta
+*.blend.save
+
+# Render outputs
+*.exr
+*.hdr
+*.tiff
+
+# Large texture caches
+textures/generated/
+textures/cache/
+
+# --- OpenCV ---
+# Sometimes temporary dumps
+opencv_ffmpeg*.dll
+
+# --- Project-specific ---
+# Ignore training datasets
+datasets/
+data/
+*.zip
+*.7z
+*.rar
+
+# Ignore exported frames / debug images
+output/
+frames/
+debug/
+screenshots/
+
+# Ignore compiled shaders (ModernGL)
+*.spv
+*.glslc
+*.shaderbin
