@@ -1,13 +1,19 @@
-import cv2
+from utils.overlay import overlay_rgba
 
-def cast_mage_hand(frame):
-    cv2.putText(frame, "Mage Hand conjured!", (50, 50),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 3)
+animation_indices = {}
 
-def cast_fireball(frame):
-    cv2.putText(frame, "Fireball!", (50, 100),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 50, 255), 3)
-    
-def cast_book_buff(frame):
-    cv2.putText(frame, "Spellbook Detected! +INT", (50, 150),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 3)
+def cast_static_spell(frame, img, pos=(0, 0)):
+    if img is None:
+        return
+    overlay_rgba(frame, img, pos[0], pos[1])
+
+def cast_animated_spell(frame, frames, key="default", pos=(0, 0)):
+    if not frames:
+        return
+
+    if key not in animation_indices:
+        animation_indices[key] = 0
+
+    idx = animation_indices[key] % len(frames)
+    overlay_rgba(frame, frames[idx], pos[0], pos[1])
+    animation_indices[key] += 1

@@ -87,3 +87,5 @@ pip install -r requirements.txt
 ```bash
 python test_camera.py
 ```
+
+pip install opencv-python ultralytics numpy mediapipe pygame moderngl trimesh pyrr pyglet
