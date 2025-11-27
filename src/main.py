@@ -66,6 +66,18 @@ while True:
     annotated = yolo_result.plot()
 
     results = tracker.process(frame)
+    
+    # testagem dos landmarks - refinamento
+    if results.multi_hand_landmarks:
+        for hand_landmarks in results.multi_hand_landmarks:
+            # desenhar para debug
+            tracker.drawer.draw_landmarks(
+                annotated,
+                hand_landmarks,
+                tracker.connections,
+                tracker.drawer.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=3),
+                tracker.drawer.DrawingSpec(color=(0, 0, 255), thickness=2)
+            )
 
     h, w = annotated.shape[:2]
 
