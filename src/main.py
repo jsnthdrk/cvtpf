@@ -1,36 +1,65 @@
 import cv2
 import numpy as np
+from PIL import Image
+
 from pipeline.hands import HandTracker
 from pipeline.gestures import detect_gesture
 from pipeline.yolo import ObjectDetector
 from utils.gif_loader import load_gif_frames
-from utils.overlay import overlay_rgba
-from PIL import Image
 import spells
 
-# LOAD ASSETS
+# ==========================
+#     LOAD PNG & GIF ASSETS
+# ==========================
+
 def load_png(path):
     try:
         return np.array(Image.open(path).convert("RGBA"))
-    except:
-        print(f"❌ Erro ao carregar PNG: {path}")
+    except Exception as e:
+        print(f"❌ Erro ao carregar PNG {path}: {e}")
         return None
 
-png_hand = load_png("assets/mage-hand.png")
+print("\n🔄 Carregando assets...")
+
+png_mage   = load_png("assets/mage-hand.png")
 png_shield = load_png("assets/shield.png")
 
-gif_fire = load_gif_frames("assets/fire-ball.gif")
-gif_heal = load_gif_frames("assets/heal.gif")
+gif_fire   = load_gif_frames("assets/fire-ball.gif")
+gif_heal   = load_gif_frames("assets/heal.gif")
 
-# INIT
+try:
+    gif_light = load_gif_frames("assets/lightning.gif")
+except Exception:
+    gif_light = []
+
+print("✅ Assets carregados.\n")
+
+# ==========================
+#     INIT YOLO + HANDS
+# ==========================
+
 tracker = HandTracker()
 detector = ObjectDetector()
-
 cap = cv2.VideoCapture(0)
+
+last_gesture = None
+stable_count = 0
+final_gesture = None
+
+def get_palm_px(lm, w, h):
+    return int(lm[9].x * w), int(lm[9].y * h)
+
+def get_wrist_px(lm, w, h):
+    return int(lm[0].x * w), int(lm[0].y * h)
+
+# ==========================
+#          MAIN LOOP
+# ==========================
 
 while True:
     ret, frame = cap.read()
     if not ret:
+        print("❌ ERRO: câmera não retornou frame.")
         break
 
     yolo_result = detector.detect(frame)
@@ -38,25 +67,62 @@ while True:
 
     results = tracker.process(frame)
 
+    h, w = annotated.shape[:2]
+
     if not results.multi_hand_landmarks:
-        cv2.putText(annotated, "NO HAND DETECTED", (30, 60),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        cv2.putText(annotated, "NO HAND DETECTED", (20, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        final_gesture = None
+        stable_count = 0
+
     else:
         hand = results.multi_hand_landmarks[0]
-        gesture = detect_gesture(hand)
+        lm = hand.landmark
 
-        cv2.putText(annotated, f"Gesture: {gesture}", (30, 120),
+        wrist = get_wrist_px(lm, w, h)
+        palm  = get_palm_px(lm, w, h)
+        center = palm
+
+        gesture = detect_gesture(results.multi_hand_landmarks)
+
+
+        # Debounce: só aceita gesto se repetir 3 frames seguidos
+        if gesture == last_gesture:
+            stable_count += 1
+        else:
+            stable_count = 0
+        last_gesture = gesture
+
+        if stable_count >= 3:
+            final_gesture = gesture
+
+        cv2.putText(annotated, f"Gesto: {final_gesture}", (20, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-        if gesture == "PINCH":
-            spells.cast_static_spell(annotated, png_hand, pos=(300, 250))
+        # ==============================
+        #        SPELL ROUTING
+        # ==============================
 
-        elif gesture == "OPEN":
-            spells.cast_animated_spell(annotated, gif_fire, key="fire", pos=(200, 200))
+        if final_gesture == "PINCH":
+            spells.cast_mage_hand(annotated, png_mage, center)
 
-    cv2.imshow("D&D AR", annotated)
+        elif final_gesture == "OPEN":
+            spells.cast_fireball(annotated, gif_fire, center)
+
+        elif final_gesture == "LIGHTNING":
+            spells.cast_lightning_fullscreen(annotated, gif_light)
+
+        elif final_gesture == "HEAL":
+            spells.cast_heal(annotated, gif_heal, center)
+
+        elif final_gesture == "SHIELD":
+            spells.cast_shield(annotated, png_shield, wrist, palm)
+
+    cv2.imshow("D&D AR Spells", annotated)
+
     if cv2.waitKey(1) & 0xFF == 27:
         break
 
 cap.release()
 cv2.destroyAllWindows()
+print("\n👋 Encerrado.")
