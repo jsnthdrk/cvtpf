@@ -39,50 +39,69 @@ def detect_gesture(hands):
     pinky  = lm[20]
 
     # ---- Tamanho da mão: mede pulso até centro da palma ----
-    hand_big = dist(lm[0], lm[9]) > 0.20  
+    hand_size = dist(lm[0], lm[9])
+    if hand_size == 0:
+        return None
+    
+    # hand_big = dist(lm[0], lm[9]) > 0.20  - old
+    # -------------------------------
+    # funções helpers
+    # -------------------------------
+    def normalized_dist(p1, p2):
+        return dist(p1, p2) / hand_size
 
-    # ---- Palma voltada pra camera ----
-    front_facing = abs(lm[0].x - lm[9].x) < 0.06
+    def is_curled(tip, pip): 
+        return lm[tip].y - lm[pip].y * hand_size > 0.0 # - consistencia de sinal
 
-    # ---- Dedos dobrados ----
-    def curled(tip, pip): return lm[tip].y > lm[pip].y
-    curled_fingers = sum([
-        curled(8,6), curled(12,10), curled(16,14), curled(20,18)
-    ])
+    def is_extended(tip, pip): 
+        return not is_curled(tip, pip)
 
+    
+    # ================================
+    # Lógica de detecção de gestos
     # ================================
     # SHIELD
     # ================================
+    hand_big = hand_size > 0.2 # valor experimental
+    front_facing = normalized_dist(lm[0], lm[9]) < 0.35 # palma de frente
+    curled_fingers = sum([
+        is_curled(8,6),   # indicador (não considerar 5, porque =index_finger_mcp)*
+        is_curled(12,10), # dedo do meio (não considerar 9, porque =middle_finger_mcp)*
+        is_curled(16,14), # anelar (não considerar 13, porque =ring_finger_mcp)*
+        is_curled(20,18)  # mindinho (não considerar 17, porque =pinky_finger_mcp)*
+        # xx_xxx_mcp -> landmarks que representam a base dos dedos (metacarpal tubercule), ou seja, a parte da mão onde os dedos se conectam à palma.
+    ])
+    
     if hand_big and front_facing and curled_fingers >= 2:
         return "SHIELD"
 
     # ================================
     # PINCH
     # ================================
-    thumb_index_close = dist(thumb, index) < 0.06
+    thumb_index_close = normalized_dist(thumb, index) < 0.3
     index_extended = lm[8].y < lm[6].y
-
     if thumb_index_close and index_extended:
         return "PINCH"
 
     # ================================
     # HEAL
     # ================================
-    if dist(thumb, middle) < 0.06 and dist(thumb, index) > 0.07:
+    thumb_index_close = normalized_dist(thumb, middle) < 0.3
+    thumb_index_far = normalized_dist(thumb, index) > 0.35
+    if thumb_index_close and thumb_index_far:
         return "HEAL"
 
     # ================================
     # OPEN → fireball
     # ================================
-    def extended(tip, pip): return lm[tip].y < lm[pip].y
     open_fingers = sum([
-        extended(8,6),
-        extended(12,10),
-        extended(16,14),
-        extended(20,18)
+        # (nao consideramos o valor de mcp como descrito no metodo de SHIELD)
+        is_extended(8,6),   # indicador
+        is_extended(12,10), # dedo do meio
+        is_extended(16,14), # anelar
+        is_extended(20,18)  # mindinho
     ])
-
     if open_fingers >= 3:
         return "OPEN"
-
+    
     return None
