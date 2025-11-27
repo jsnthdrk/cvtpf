@@ -66,9 +66,15 @@ while True:
     annotated = yolo_result.plot()
 
     results = tracker.process(frame)
+    h, w = annotated.shape[:2]
     
-    # testagem dos landmarks - refinamento
-    if results.multi_hand_landmarks:
+    if not results.multi_hand_landmarks:
+        cv2.putText(annotated, "NO HAND DETECTED", (20, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        final_gesture = None
+        stable_count = 0
+
+    else:
         for hand_landmarks in results.multi_hand_landmarks:
             # desenhar para debug
             tracker.drawer.draw_landmarks(
@@ -78,16 +84,8 @@ while True:
                 tracker.drawer.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=3),
                 tracker.drawer.DrawingSpec(color=(0, 0, 255), thickness=2)
             )
-
-    h, w = annotated.shape[:2]
-
-    if not results.multi_hand_landmarks:
-        cv2.putText(annotated, "NO HAND DETECTED", (20, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        final_gesture = None
-        stable_count = 0
-
-    else:
+            
+        # "pegar" a primeira mão para gestos
         hand = results.multi_hand_landmarks[0]
         lm = hand.landmark
 
@@ -95,6 +93,11 @@ while True:
         palm  = get_palm_px(lm, w, h)
         center = palm
 
+        # marcação visual do pulso + palma (debug mais profundo)
+        cv2.circle(annotated, wrist, 5, (255, 0, 0), -1) # pulso azul
+        cv2.circle(annotated, palm, 5, (0, 255, 255), -1)  # palma amarela
+
+        # deteção de gestos
         gesture = detect_gesture(results.multi_hand_landmarks)
 
 
