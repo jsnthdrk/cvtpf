@@ -35,8 +35,8 @@ def detect_gesture(hands):
     thumb  = lm[4]
     index  = lm[8]
     middle = lm[12]
-    ring   = lm[16]
-    pinky  = lm[20]
+    # ring   = lm[16]
+    # pinky  = lm[20]
 
     # ---- Tamanho da mão: mede pulso até centro da palma ----
     hand_size = dist(lm[0], lm[9])
