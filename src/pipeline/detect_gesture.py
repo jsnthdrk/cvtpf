@@ -63,7 +63,7 @@ def detect_gesture(hands):
     # ================================
     hand_big = hand_size > 0.18 # valor empirico (podemos ajustar se necessário)
     palm_x_dist = abs(wrist.x - palm_center.x)
-    front_facing = palm_x_dist < (hand_size * 0,45)
+    front_facing = palm_x_dist < (hand_size * 0.45)
     curled_fingers = sum([
         is_curled(index,6),   # indicador (não considerar 5, porque =index_finger_mcp)*
         is_curled(middle,10), # dedo do meio (não considerar 9, porque =middle_finger_mcp)*
