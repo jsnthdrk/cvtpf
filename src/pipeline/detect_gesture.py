@@ -31,7 +31,7 @@ def detect_gesture(hands):
     hand = hands[0]
     lm = hand.landmark
 
-    # ---- conveniências ----
+    # ---- conveniências (valor inicial) ----
     thumb  = lm[4]
     index  = lm[8]
     middle = lm[12]
@@ -65,10 +65,10 @@ def detect_gesture(hands):
     palm_x_dist = abs(wrist.x - palm_center.x)
     front_facing = palm_x_dist < (hand_size * 0,45)
     curled_fingers = sum([
-        is_curled(8,6),   # indicador (não considerar 5, porque =index_finger_mcp)*
-        is_curled(12,10), # dedo do meio (não considerar 9, porque =middle_finger_mcp)*
-        is_curled(16,14), # anelar (não considerar 13, porque =ring_finger_mcp)*
-        is_curled(20,18)  # mindinho (não considerar 17, porque =pinky_finger_mcp)*
+        is_curled(index,6),   # indicador (não considerar 5, porque =index_finger_mcp)*
+        is_curled(middle,10), # dedo do meio (não considerar 9, porque =middle_finger_mcp)*
+        is_curled(ring,14), # anelar (não considerar 13, porque =ring_finger_mcp)*
+        is_curled(pinky,18)  # mindinho (não considerar 17, porque =pinky_finger_mcp)*
         # xx_xxx_mcp -> landmarks que representam a base dos dedos (metacarpal tubercule), ou seja, a parte da mão onde os dedos se conectam à palma.
     ])
     
