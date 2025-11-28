@@ -93,9 +93,8 @@ while True:
         palm  = get_palm_px(lm, w, h)
         center = palm
 
-        # marcação visual do pulso + palma (debug mais profundo)
+        # marcação visual do pulso
         cv2.circle(annotated, wrist, 5, (255, 0, 0), -1) # pulso azul
-        cv2.circle(annotated, palm, 5, (0, 255, 255), -1)  # palma amarela
 
         # deteção de gestos
         gesture = detect_gesture(results.multi_hand_landmarks)
