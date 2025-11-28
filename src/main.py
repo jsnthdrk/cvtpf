@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 
 from pipeline.hands import HandTracker
-from pipeline.gestures import detect_gesture
+from pipeline.detect_gesture import detect_gesture
 from pipeline.yolo import ObjectDetector
 from utils.gif_loader import load_gif_frames
 import spells

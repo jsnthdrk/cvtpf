@@ -58,7 +58,15 @@ def detect_gesture(hands):
     # -------------------------
     # HEAL
     # -------------------------
-    if dist(lm[4], lm[12]) < 0.06 and dist(lm[4], lm[8]) > 0.07:
+    def is_v_sign():
+        index_extended = lm[8].y < lm[6].y
+        middle_extended = lm[12].y < lm[10].y
+        ring_folded = lm[16].y > lm[14].y
+        pinky_folded = lm[20].y > lm[18].y
+        
+        return index_extended and middle_extended and ring_folded and pinky_folded
+    
+    if is_v_sign():
         return "HEAL"
 
     # -------------------------
