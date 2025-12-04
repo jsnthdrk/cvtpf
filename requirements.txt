@@ -1,9 +1,0 @@
-opencv-python
-mediapipe
-numpy
-torch
-ultralytics  # YOLOv8/YOLOv12
-PyOpenGL
-PyOpenGL_accelerate
-pygame          # opcional para window/context
-modern_gl       # alternativa a PyOpenGL
