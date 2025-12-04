@@ -89,3 +89,29 @@ python test_camera.py
 ```
 
 pip install opencv-python ultralytics numpy mediapipe pygame moderngl trimesh pyrr pyglet
+
+
+
+setup 2 (UV, se nao funcionar):
+
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+uv --version
+To add C:\Users\USER\.local\bin to your PATH, either restart your shell or run:
+
+set Path=C:\Users\USER\.local\bin;%Path%   (cmd)
+$env:Path = "C:\Users\USER\.local\bin;$env:Path"   (powershell)
+
+uv add numpy --native-tls
+uv add opencv-python --native-tls
+uv add mediapipe --native-tls
+uv add pillow --native-tls
+uv add ultralytics --native-tls
+uv add matplotlib --native-tls
+
+uv run src/main.py
+
+
+ou
+
+uv venv
+uv sync
