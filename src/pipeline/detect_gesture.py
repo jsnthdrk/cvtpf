@@ -1,114 +1,91 @@
 import math
 
-def dist(p1, p2):
-    return math.hypot(p1.x - p2.x, p1.y - p2.y) # distancia euclidiana corrigida
+def dist2d(a, b):
+    return math.hypot(a.x - b.x, a.y - b.y)
 
 def detect_gesture(hands):
-    """
-    DETECTA:
-    - LIGHTNING  : (2 mãos)
-    - SHIELD     : mão grande singular com a palma da frente e mais de 2 dedos dobrados
-    - PINCH      : polegar + indicador (polegar perto do indicador e o indicador estendido)
-    - HEAL       : sinal de "V" (polegar perto do dedo médio e longe do indicador) | teve que ser mudado face ao que está presente na proposta incial devido a problemas de deteção
-    - OPEN       : 3 ou mais dedos estendidos
-    """
-
-    # ================================
-    # SEM MÃO
-    # ================================
     if not hands or len(hands) == 0:
         return None
 
-    # ================================
-    # LIGHTNING = 2 mãos visíveis
-    # ================================
-    if len(hands) >= 2:
-        return "LIGHTNING"
+    num = len(hands)
 
-    # ================================
-    # aqui vamos usar a primeira mão detetada para gestos de 1 mão
-    # ================================
-    hand = hands[0]
-    lm = hand.landmark
+    # helpers
+    def extended(lm, tip, pip):
+        return lm[tip].y < lm[pip].y
 
-    # ---- conveniências (valor inicial) ----
-    thumb  = lm[4]
-    index  = lm[8]
-    # middle = lm[12]
-    # ring   = lm[16]
-    # pinky  = lm[20]
-    wrist = lm[0]
-    palm_center = lm[9]
+    def curled(lm, tip, pip):
+        return lm[tip].y > lm[pip].y
 
-    # ---- Tamanho da mão: mede pulso até centro da palma ----
-    hand_size = dist(wrist, palm_center)
-    if hand_size == 0:
+    def fingers_extended(lm):
+        return sum([
+            extended(lm, 8, 6),
+            extended(lm, 12, 10),
+            extended(lm, 16, 14),
+            extended(lm, 20, 18),
+        ])
+
+    def fingers_curled(lm):
+        return sum([
+            curled(lm, 8, 6),
+            curled(lm, 12, 10),
+            curled(lm, 16, 14),
+            curled(lm, 20, 18),
+        ])
+
+    # ============================================================
+    # 1) GESTOS DE 2 MÃOS (têm prioridade absoluta)
+    # ============================================================
+    if num >= 2:
+        lm1 = hands[0].landmark
+        lm2 = hands[1].landmark
+
+        w1_y = lm1[0].y
+        w2_y = lm2[0].y
+
+        # Mãos levantadas (muito permissivo)
+        up1 = w1_y < 0.90
+        up2 = w2_y < 0.90
+
+        open1 = fingers_extended(lm1) >= 3
+        open2 = fingers_extended(lm2) >= 3
+
+        fist1 = fingers_curled(lm1) >= 3
+        fist2 = fingers_curled(lm2) >= 3
+
+        cx1 = lm1[9].x
+        cx2 = lm2[9].x
+        close = abs(cx1 - cx2) < 0.35
+
+        # LIGHTNING (duas palmas abertas levantadas)
+        if up1 and up2 and open1 and open2:
+            return "LIGHTNING"
+
+        # SHIELD (duas mãos fechadas levantadas próximas)
+        if up1 and up2 and fist1 and fist2 and close:
+            return "SHIELD"
+
+        # Se há 2 mãos mas não batem lightning/shield
         return None
-    
-    # normalizações
-    def normalized_dist(p1, p2):
-        return dist(p1, p2) / hand_size
 
-    def is_curled(tip_idx, pip_idx, margin=0.0): 
-        return lm[tip_idx].y > lm[pip_idx].y + margin
+    # ============================================================
+    # 2) GESTOS DE UMA MÃO
+    # ============================================================
+    lm = hands[0].landmark
 
-    def is_extended(tip_idx, pip_idx, margin=0.0): 
-        return lm[tip_idx].y > lm[pip_idx].y + margin
+    size = dist2d(lm[0], lm[9]) or 1.0
 
-    
-    # ================================
-    # Lógica de detecção de gestos
-    # ================================
-    # SHIELD
-    # ================================
-    hand_big = hand_size > 0.18 # valor empirico (podemos ajustar se necessário)
-    palm_x_dist = abs(wrist.x - palm_center.x)
-    front_facing = palm_x_dist < (hand_size * 0.45)
-    curled_fingers = sum([
-        is_curled(8,6),   # indicador (não considerar 5, porque =index_finger_mcp)*
-        is_curled(12,10), # dedo do meio (não considerar 9, porque =middle_finger_mcp)*
-        is_curled(16,14), # anelar (não considerar 13, porque =ring_finger_mcp)*
-        is_curled(20,18)  # mindinho (não considerar 17, porque =pinky_finger_mcp)*
-        # xx_xxx_mcp -> landmarks que representam a base dos dedos (metacarpal tubercule), ou seja, a parte da mão onde os dedos se conectam à palma.
-    ])
-    
-    if hand_big and front_facing and curled_fingers >= 2:
-        return "SHIELD"
-
-    # ================================
-    # PINCH
-    # ================================
-    thumb_index_norm = normalized_dist(thumb, index)
-    index_extended = is_extended(8,6)
-    if thumb_index_norm < 0.25 and index_extended:
+    if dist2d(lm[4], lm[8]) / size < 0.25 and extended(lm, 8, 6):
         return "PINCH"
 
-    # ================================
-    # HEAL
-    # ================================
-    def is_v_sign():
-        return (
-            is_extended(8,6, margin=0.0) and
-            is_extended(12,10, margin=0.0) and
-            is_curled(16,14, margin=0.0) and
-            is_curled(20,18, margin=0.0)
-        )
-        
-    if is_v_sign():
+    if (
+        extended(lm, 8, 6) and
+        extended(lm, 12, 10) and
+        curled(lm, 16, 14) and
+        curled(lm, 20, 18)
+    ):
         return "HEAL"
 
-    # ================================
-    # OPEN → fireball
-    # ================================
-    open_fingers = sum([
-        # (nao consideramos o valor de mcp como descrito no metodo de SHIELD)
-        is_extended(8,6),   # indicador
-        is_extended(12,10), # dedo do meio
-        is_extended(16,14), # anelar
-        is_extended(20,18)  # mindinho
-    ])
-    if open_fingers >= 3:
+    if fingers_extended(lm) >= 3:
         return "OPEN"
-    
-    # se nenhum gesto for detetado
+
     return None
